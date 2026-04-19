@@ -76,11 +76,29 @@
     <div id="debug-sliders"></div>
   </div>
 
+  <div id="viz-panel" style="
+    display:none; position:fixed; top:0; left:0; width:272px; max-height:100vh;
+    overflow-y:auto; background:rgba(0,0,0,0.88); color:#ddd; font:12px/1.4 monospace;
+    padding:10px 12px 16px; z-index:9999; box-sizing:border-box;
+  ">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <strong style="font-size:13px">VOICE BANDS <span style="color:#555;font-weight:normal;font-size:10px">floor · ceiling · gain · strain</span></strong>
+      <button id="viz-close" style="background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:0">×</button>
+    </div>
+    <div id="viz-sections"></div>
+  </div>
+
   <button id="debug-toggle" style="
     position:fixed; bottom:12px; right:12px; background:rgba(0,0,0,0.5);
     color:#aaa; border:1px solid #444; border-radius:4px; font:11px monospace;
     padding:4px 8px; cursor:pointer; z-index:9999;
   ">debug</button>
+
+  <button id="viz-toggle" style="
+    position:fixed; bottom:12px; left:12px; background:rgba(0,0,0,0.5);
+    color:#aaa; border:1px solid #444; border-radius:4px; font:11px monospace;
+    padding:4px 8px; cursor:pointer; z-index:9999;
+  ">viz</button>
 
   <script type="module" src="main.js"></script>
 </body>

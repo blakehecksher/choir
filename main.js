@@ -97,6 +97,17 @@ const CONFIG = {
   bandTenor:   { min: 180, max: 600  },
   bandBass:    { min:  80, max: 500  },
 
+  // --- Per-part audio response -------------------------------------
+  // Each voice section can be tuned independently. ampFloor/Ceiling/Gain
+  // and strainThreshold vary per band because different frequency ranges
+  // have different noise floors and average energy levels in choral audio.
+  partConfig: {
+    soprano: { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
+    alto:    { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
+    tenor:   { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
+    bass:    { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
+  },
+
   // --- Timing (ms) --------------------------------------------------
   // audioFadeMs:       duration of gain fade-out when stopping/shuffling.
   audioFadeMs:     300,
@@ -113,7 +124,7 @@ const CONFIG = {
 
   // --- Debug -------------------------------------------------------
   // debugPanel: set true to enable the live-tuning overlay (D key or debug button).
-  debugPanel: false,
+  debugPanel: true,
 
   // --- Layout (set dynamically) ------------------------------------
   // These are overwritten every layout pass — do not hand-tune.
@@ -657,6 +668,7 @@ function tick(time) {
 
   updateMouths(time, dt);
   updateConductor(time);
+  drawVisualizerCanvases();
 
   if (app.state === State.ENDING) {
     const elapsed = time - app.stateEnteredAt;
@@ -685,9 +697,10 @@ function updateBandAmplitudes() {
       count++;
     }
     const avg = count > 0 ? (sum / count) / 255 : 0;
-    const raw = Math.min(1, Math.pow(avg, CONFIG.ampCurve) * CONFIG.ampGain);
+    const pc = CONFIG.partConfig[row.band];
+    const raw = Math.min(1, Math.pow(avg, CONFIG.ampCurve) * pc.ampGain);
     // Remap so ampFloor = silent (0) and ampCeiling = fully open (1)
-    const shaped = Math.min(1, Math.max(0, (raw - CONFIG.ampFloor) / (CONFIG.ampCeiling - CONFIG.ampFloor)));
+    const shaped = Math.min(1, Math.max(0, (raw - pc.ampFloor) / (pc.ampCeiling - pc.ampFloor)));
     row.latestAmp = shaped;
     row.historyIdx = (row.historyIdx + 1) % row.history.length;
     row.history[row.historyIdx] = shaped;
@@ -713,8 +726,9 @@ function updateMouths(time, dt) {
         const bandAmp = getLaggedAmp(row, mouth.lagFrames);
         const noise = Math.sin(time * mouth.noiseFreqA + mouth.noisePhaseA) * CONFIG.noiseAmp
                     + Math.sin(time * mouth.noiseFreqB + mouth.noisePhaseB) * CONFIG.noiseAmp2;
-        // Strain shimmer: fast vibration that grows when amplitude exceeds threshold
-        const strainFactor = Math.max(0, (bandAmp - CONFIG.strainThreshold) / (1 - CONFIG.strainThreshold));
+        // Strain shimmer: fast vibration that grows when amplitude exceeds per-part threshold
+        const strainThr = CONFIG.partConfig[row.band].strainThreshold;
+        const strainFactor = Math.max(0, (bandAmp - strainThr) / (1 - strainThr));
         const strain = Math.sin(time * mouth.strainFreq + mouth.noisePhaseA * 3.7)
                      * CONFIG.strainAmp * strainFactor;
         target = Math.max(0, Math.min(1.1, bandAmp * (1 + noise + strain)));
@@ -835,6 +849,166 @@ function pathEased(t) {
   return ((beatIdx + easedBeatT) / beats) % 1;
 }
 
+// -------------------- Visualizer panel --------------------
+
+const VIZ_BANDS  = ['soprano', 'alto', 'tenor', 'bass'];
+const VIZ_COLORS = { soprano: '#f06090', alto: '#f0a030', tenor: '#30c080', bass: '#4090f0' };
+const VIZ_LABELS = { soprano: 'Soprano',  alto: 'Alto',    tenor: 'Tenor',   bass: 'Bass'   };
+
+// Sliders exposed per-part in the viz panel
+const VIZ_SLIDERS = [
+  // label,     key,               min,  max,  step
+  ['Floor',     'ampFloor',        0,    0.5,  0.01],
+  ['Ceiling',   'ampCeiling',      0.2,  1.5,  0.01],
+  ['Gain',      'ampGain',         0.3,  6,    0.1 ],
+  ['Strain',    'strainThreshold', 0,    1,    0.01],
+];
+
+function buildVisualizerPanel() {
+  const sectionsDiv = document.getElementById('viz-sections');
+
+  for (const band of VIZ_BANDS) {
+    const color = VIZ_COLORS[band];
+    const pc    = CONFIG.partConfig[band];
+
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #222';
+
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `color:${color};font-size:11px;font-weight:bold;letter-spacing:1px;margin-bottom:4px;text-transform:uppercase`;
+    lbl.textContent = VIZ_LABELS[band];
+    section.appendChild(lbl);
+
+    const cvs = document.createElement('canvas');
+    cvs.id = `viz-cvs-${band}`;
+    cvs.width  = 248;
+    cvs.height = 70;
+    cvs.style.cssText = 'width:248px;height:70px;display:block;margin-bottom:6px;border-radius:2px';
+    section.appendChild(cvs);
+
+    for (const [sliderLabel, key, min, max, step] of VIZ_SLIDERS) {
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:3px';
+
+      const valSpan = document.createElement('span');
+      valSpan.style.cssText = `float:right;color:${color};min-width:30px;text-align:right`;
+      valSpan.textContent = pc[key].toFixed(2);
+
+      const labelEl = document.createElement('div');
+      labelEl.style.cssText = 'font-size:10px;margin-bottom:1px';
+      labelEl.textContent = sliderLabel;
+      labelEl.appendChild(valSpan);
+
+      const slider = document.createElement('input');
+      slider.type  = 'range';
+      slider.min   = min;
+      slider.max   = max;
+      slider.step  = step;
+      slider.value = pc[key];
+      slider.style.cssText = `width:100%;accent-color:${color};cursor:pointer`;
+      slider.addEventListener('input', () => {
+        const v = parseFloat(slider.value);
+        CONFIG.partConfig[band][key] = v;
+        valSpan.textContent = v.toFixed(2);
+      });
+
+      row.appendChild(labelEl);
+      row.appendChild(slider);
+      section.appendChild(row);
+    }
+
+    sectionsDiv.appendChild(section);
+  }
+
+  const panel = document.getElementById('viz-panel');
+  document.getElementById('viz-toggle').addEventListener('click', () => {
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  });
+  document.getElementById('viz-close').addEventListener('click', () => {
+    panel.style.display = 'none';
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+  });
+}
+
+function drawVisualizerCanvases() {
+  const panel = document.getElementById('viz-panel');
+  if (!panel || panel.style.display === 'none') return;
+
+  // Frequency window to display across all canvases (Hz)
+  const FREQ_MIN = 50;
+  const FREQ_MAX = 2200;
+
+  for (const band of VIZ_BANDS) {
+    const cvs = document.getElementById(`viz-cvs-${band}`);
+    if (!cvs) continue;
+    const ctx   = cvs.getContext('2d');
+    const W     = cvs.width;
+    const H     = cvs.height;
+    const color = VIZ_COLORS[band];
+    const pc    = CONFIG.partConfig[band];
+
+    ctx.fillStyle = '#0e0e0e';
+    ctx.fillRect(0, 0, W, H);
+
+    if (!app.freqData || !app.audioCtx) continue;
+
+    const nyquist  = app.audioCtx.sampleRate / 2;
+    const binCount = app.freqData.length;
+
+    const globalMin = Math.max(0, Math.floor(FREQ_MIN / nyquist * binCount));
+    const globalMax = Math.min(binCount - 1, Math.ceil(FREQ_MAX / nyquist * binCount));
+    const numBins   = globalMax - globalMin + 1;
+
+    const bandCfg   = CONFIG[BAND_KEYS[band]];
+    const bandMinBin = Math.floor(bandCfg.min / nyquist * binCount);
+    const bandMaxBin = Math.ceil(bandCfg.max  / nyquist * binCount);
+
+    const row = app.rows.find(r => r.band === band);
+    const amp = row ? row.latestAmp : 0;
+
+    // Layout: FFT spectrum on left, amplitude meter on right
+    const FFT_W   = W - 42;
+    const METER_X = FFT_W + 4;
+    const METER_W = W - METER_X;
+
+    // FFT bars
+    const barW = FFT_W / numBins;
+    for (let i = 0; i < numBins; i++) {
+      const binIdx = globalMin + i;
+      const v      = app.freqData[binIdx] / 255;
+      const barH   = Math.max(1, v * H);
+      const inBand = binIdx >= bandMinBin && binIdx <= bandMaxBin;
+      ctx.fillStyle = inBand ? color : '#252525';
+      ctx.fillRect(i * barW, H - barH, Math.max(1, barW - 0.5), barH);
+    }
+
+    // Amplitude meter background
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillRect(METER_X, 0, METER_W, H);
+
+    // Amplitude fill — goes red when strained
+    const ampH = amp * H;
+    ctx.fillStyle = amp > pc.strainThreshold ? '#f84040' : color;
+    ctx.fillRect(METER_X, H - ampH, METER_W, ampH);
+
+    // Strain threshold dashed line
+    const strainY = Math.round(H - pc.strainThreshold * H);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,240,80,0.75)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(METER_X - 6, strainY);
+    ctx.lineTo(W, strainY);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // -------------------- Debug panel --------------------
 
 const DEBUG_SLIDERS = [
@@ -846,11 +1020,7 @@ const DEBUG_SLIDERS = [
   ['Attack tau',         'attackTauBase',       5,      80,     1    ],
   ['Release tau',        'releaseTauBase',      20,     300,    1    ],
   ['Amp curve',          'ampCurve',            0.5,    5,      0.1  ],
-  ['Amp gain',           'ampGain',             0.5,    5,      0.1  ],
-  ['Amp floor',          'ampFloor',            0,      0.4,    0.01 ],
-  ['Amp ceiling',        'ampCeiling',          0.2,    1.5,    0.01 ],
   ['Noise amp',          'noiseAmp',            0,      0.3,    0.01 ],
-  ['Strain threshold',   'strainThreshold',     0,      1,      0.01 ],
   ['Strain amp',         'strainAmp',           0,      0.5,    0.01 ],
   ['Strain freq base',   'strainFreqBase',      0.0001, 0.005,  0.0001],
   ['Analyser smoothing', 'analyserSmoothing',   0,      0.99,   0.01 ],
@@ -910,6 +1080,7 @@ function buildDebugPanel() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  buildVisualizerPanel();
   if (!CONFIG.debugPanel) {
     document.getElementById('debug-toggle').style.display = 'none';
     return;
