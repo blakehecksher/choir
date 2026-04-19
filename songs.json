@@ -1,0 +1,110 @@
+[
+  {
+    "title": "O Quam Gloriosum",
+    "composer": "Tomás Luis de Victoria",
+    "url": "https://archive.org/download/OQuamGloriosum/OQuamGlorVict-Ca.mp3",
+    "bpm": 62
+  },
+  {
+    "title": "Surrexit Christus",
+    "composer": "Michael Praetorius",
+    "url": "https://archive.org/download/20140518-Gregoriana-CC38/20140518-cc38-03-praetorius-surrexit.mp3",
+    "bpm": 84
+  },
+  {
+    "title": "O Filii et Filiae",
+    "composer": "Traditional",
+    "url": "https://archive.org/download/20140518-Gregoriana-CC38/20140518-cc38-04-o_filii.mp3",
+    "bpm": 80
+  },
+  {
+    "title": "Alleluia",
+    "composer": "Henry Purcell",
+    "url": "https://archive.org/download/20140518-Gregoriana-CC38/20140518-cc38-05-purcell-alleluia.mp3",
+    "bpm": 88
+  },
+  {
+    "title": "Exsultate Justi",
+    "composer": "Lodovico Viadana",
+    "url": "https://archive.org/download/20140518-Gregoriana-CC38/20140518-cc38-07-viadana-exsultate.mp3",
+    "bpm": 80
+  },
+  {
+    "title": "Jubilate Deo",
+    "composer": "Josquin des Prez",
+    "url": "https://archive.org/download/20140518-Gregoriana-CC38/20140518-cc38-10-josquin-jubilate.mp3",
+    "bpm": 76
+  },
+  {
+    "title": "Mariam Matrem",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/1%20Mariam%20Matrem.mp3",
+    "bpm": 66
+  },
+  {
+    "title": "Alma Redemptoris Mater",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/2%20Alma%20Redemptoris%20Mater.mp3",
+    "bpm": 60
+  },
+  {
+    "title": "Ave Maria",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/3%20Ave%20Maria.mp3",
+    "bpm": 66
+  },
+  {
+    "title": "Exaltata est Sancta Dei Genitrix",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/4%20Exaltata%20est%20Sancta%20Dei%20Genitrix.mp3",
+    "bpm": 72
+  },
+  {
+    "title": "Tota Pulchra es Maria",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/5%20Tota%20Pulchra%20es%20Maria.mp3",
+    "bpm": 72
+  },
+  {
+    "title": "Salve Regina",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/6%20Salve%20Regina.mp3",
+    "bpm": 60
+  },
+  {
+    "title": "Alleluia — Ave Maria",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/7%20Alleluia%20-%20Ave%20Maria.mp3",
+    "bpm": 80
+  },
+  {
+    "title": "Regina Coeli",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/8%20Regina%20Coeli.mp3",
+    "bpm": 76
+  },
+  {
+    "title": "Stabat Mater",
+    "composer": "Ars Mvsica",
+    "url": "https://archive.org/download/mariam-matrem/9%20Stabat%20Mater.mp3",
+    "bpm": 58
+  },
+  {
+    "title": "Ave Maria",
+    "composer": "Traditional (Gregorian)",
+    "url": "https://archive.org/download/GregorianChant/Ave%20Maria.mp3",
+    "bpm": 60
+  },
+  {
+    "title": "Agnus Dei",
+    "composer": "Traditional (Gregorian)",
+    "url": "https://archive.org/download/GregorianChant/Agnus%20Dei.mp3",
+    "bpm": 54
+  },
+  {
+    "title": "Ave Maris Stella",
+    "composer": "Traditional (Gregorian)",
+    "url": "https://archive.org/download/GregorianChant/Ave%20Maris%20Stella.mp3",
+    "bpm": 58
+  }
+]

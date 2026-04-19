@@ -1,0 +1,175 @@
+:root {
+  --bg: #E8CFA0;
+  --mouth: #000;
+  --dot: #FFFFFF;
+  --muted: #8A6E3F;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--muted);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+#stage {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100svh;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mouths */
+.mouth {
+  fill: var(--mouth);
+}
+
+/* Conductor dots */
+.dot {
+  fill: var(--dot);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.dot-single {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.dot-hit {
+  fill: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.conductor-icon {
+  fill: var(--bg);
+  pointer-events: none;
+  opacity: 1.0;
+}
+
+.dot-pair {
+  pointer-events: none;  /* decorative only — head receives all clicks */
+}
+
+.dot-single {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Head stops pulsing while music plays — solid, always on screen */
+.dot-single.conducting {
+  animation: none;
+  opacity: 1.0;
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.9); opacity: 0.75; }
+  50%      { transform: scale(1.1); opacity: 1.0; }
+}
+
+.hidden { display: none; }
+
+/* Corner icons */
+.icons {
+  position: fixed;
+  right: 18px;
+  bottom: 14px;
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  color: var(--muted);
+  opacity: 0.35;
+  cursor: pointer;
+  transition: opacity 220ms ease-in-out;
+  line-height: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover, .icon-btn:focus-visible {
+  opacity: 0.75;
+  outline: none;
+}
+
+@media (pointer: coarse) {
+  .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 11px;
+    opacity: 0.6;
+  }
+
+  .icons {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(14px, env(safe-area-inset-bottom));
+    gap: 12px;
+  }
+
+  .song-title {
+    left: max(20px, env(safe-area-inset-left));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    max-width: 50vw;
+    font-size: 14px;
+  }
+}
+
+.icon-btn.flash-reject {
+  animation: flash-reject 400ms ease-out;
+}
+
+@keyframes flash-reject {
+  0%   { color: var(--muted); }
+  40%  { color: #B3401C; opacity: 0.9; }
+  100% { color: var(--muted); }
+}
+
+/* Song title */
+.song-title {
+  position: fixed;
+  left: 20px;
+  bottom: 18px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 800ms ease-in-out;
+  max-width: 60vw;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.18);
+}
+
+.song-title.visible {
+  opacity: 0.7;
+}
+
+.song-title em {
+  font-style: italic;
+}
