@@ -48,12 +48,6 @@
     "bpm": 60
   },
   {
-    "title": "Ave Maria",
-    "composer": "Ars Mvsica",
-    "url": "https://archive.org/download/mariam-matrem/3%20Ave%20Maria.mp3",
-    "bpm": 66
-  },
-  {
     "title": "Exaltata est Sancta Dei Genitrix",
     "composer": "Ars Mvsica",
     "url": "https://archive.org/download/mariam-matrem/4%20Exaltata%20est%20Sancta%20Dei%20Genitrix.mp3",
@@ -94,12 +88,6 @@
     "composer": "Traditional (Gregorian)",
     "url": "https://archive.org/download/GregorianChant/Ave%20Maria.mp3",
     "bpm": 60
-  },
-  {
-    "title": "Agnus Dei",
-    "composer": "Traditional (Gregorian)",
-    "url": "https://archive.org/download/GregorianChant/Agnus%20Dei.mp3",
-    "bpm": 54
   },
   {
     "title": "Ave Maris Stella",

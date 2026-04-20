@@ -7,24 +7,28 @@
 const CONFIG = {
 
   // --- Mouth shape — landscape (desktop) ---------------------------
-  // mouthRx:       horizontal half-width of closed mouth ellipse (SVG units)
-  mouthRx:       14,
-  // mouthRxOpen:   horizontal half-width when fully open — smaller = rounder
-  mouthRxOpen:   11,
-  // mouthRyClosed: vertical half-height when closed — keep near 1 for dash look
-  mouthRyClosed:  1,
-  // mouthRyOpen:   vertical half-height at peak amplitude — bigger = wider gape
-  mouthRyOpen:   28,
-  // mouthSpacing:  center-to-center X distance between singer dots
-  mouthSpacing:  80,
+  // mouthWidthClosed / mouthWidthOpen:
+  //   horizontal half-width of the mouth ellipse in SVG units.
+  //   (Old naming: mouthRx / mouthRxOpen.)
+  mouthWidthClosed: 14,
+  mouthWidthOpen:   11,
+  // mouthHeightClosed / mouthHeightOpen:
+  //   vertical half-height of the mouth ellipse in SVG units.
+  //   Keep mouthHeightClosed near 1 for a dash-like closed mouth.
+  //   (Old naming: mouthRyClosed / mouthRyOpen.)
+  mouthHeightClosed: 1,
+  mouthHeightOpen:   28,
+  // singerSpacing: center-to-center X distance between singers.
+  //   (Old naming: mouthSpacing.)
+  singerSpacing: 80,
 
   // --- Mouth shape — portrait (phone) ------------------------------
   // Same parameters as above, scaled for the narrow portrait viewport.
-  portraitMouthRx:       33,
-  portraitMouthRxOpen:   26,
-  portraitMouthRyClosed:  2,
-  portraitMouthRyOpen:   100,
-  portraitMouthSpacing: 180,
+  portraitMouthWidthClosed:  33,
+  portraitMouthWidthOpen:    26,
+  portraitMouthHeightClosed:  2,
+  portraitMouthHeightOpen:   100,
+  portraitSingerSpacing:    180,
 
   // --- Conductor ---------------------------------------------------
   // conductorHeadPx:    radius of the head dot in physical screen pixels
@@ -37,75 +41,86 @@ const CONFIG = {
   conductorPathRyPx:  30,
 
   // --- Mouth animation ----------------------------------------------
-  // attackTauBase/Jitter:  exponential-smoothing time-constant (ms) for opening.
-  //   Lower = snappier attack. Jitter randomises each singer slightly.
-  attackTauBase:    18,
-  attackTauJitter:  12,
-  // releaseTauBase/Jitter: same for closing. Higher = slower decay.
-  releaseTauBase:   110,
-  releaseTauJitter:  50,
+  // mouthOpenResponseMs / mouthCloseResponseMs:
+  //   how quickly mouths react when opening or closing.
+  //   Lower = faster response. "Tau" is the technical term for this smoothing time.
+  mouthOpenResponseMs:        32,
+  //   Jitter adds slight per-singer timing variation. Set to 0 for unison.
+  //   Real choirs never attack in perfect unison — a few ms of spread reads as human.
+  mouthOpenResponseJitterMs:  14,
+  mouthCloseResponseMs:      185,
+  mouthCloseResponseJitterMs: 55,
 
   // --- Per-mouth shimmer (idle noise) ------------------------------
-  // lagFramesMax:       max frames a mouth can lag behind the band reading,
-  //   creating a ripple effect across the row.
-  lagFramesMax:    6,
-  // noiseAmp / noiseAmp2: amplitude of two sine-based noise oscillators
-  //   added to the mouth's target value — subtle organic movement at rest.
-  noiseAmp:       0.06,
-  noiseAmp2:      0.03,
-  // noiseFreqA/BBase:   base oscillator frequency (radians/ms) — keep tiny.
-  // noiseFreqA/BRange:  per-mouth random spread on top of the base frequency.
-  noiseFreqABase: 0.0004,
-  noiseFreqARange:0.0002,
-  noiseFreqBBase: 0.0002,
-  noiseFreqBRange:0.0001,
+  // maxRippleDelayFrames:
+  //   max frame delay before one singer copies the row loudness,
+  //   which creates the ripple effect across the row.
+  //   Small non-zero values give a subtle phrase ripple without looking like a wave.
+  maxRippleDelayFrames: 2,
+  // idleWobbleAmount1 / idleWobbleAmount2:
+  //   amount of subtle idle movement added even when the choir is quiet.
+  //   Simulates breath, jaw micro-settling, and singers not being statues.
+  idleWobbleAmount1: 0.055,
+  idleWobbleAmount2: 0.035,
+  // idleWobbleSpeed1 / 2 and their Jitter values:
+  //   speed of those idle wobble waves.
+  //   Speed 1 ≈ slow breath cycle (~0.4 Hz). Speed 2 ≈ faster jaw flutter (~1 Hz).
+  idleWobbleSpeed1:       0.0026,
+  idleWobbleSpeed1Jitter: 0.0014,
+  idleWobbleSpeed2:       0.0062,
+  idleWobbleSpeed2Jitter: 0.0028,
 
   // --- Strain shimmer (loud noise) ---------------------------------
-  // Added on top of idle noise when amplitude is high — simulates vocal strain.
-  // strainThreshold:  amplitude (0–1) below which strain shimmer is zero.
-  strainThreshold: 0.55,
-  // strainAmp:        max extra noise amplitude at full volume.
-  strainAmp:       0.18,
-  // strainFreqBase:   base frequency of the strain oscillator (radians/ms).
-  //   Higher than idle noise = faster, more jittery vibration.
-  strainFreqBase:  0.0018,
-  // strainFreqRange:  per-mouth random spread on strain frequency.
-  strainFreqRange: 0.0008,
+  // Added on top of idle noise when amplitude is high — simulates vocal vibrato/strain.
+  // strainStartLevel: loudness level (0-1) where strained wobble begins.
+  strainStartLevel: 0.42,
+  // strainWobbleAmount: max extra mouth wobble at full volume.
+  strainWobbleAmount: 0.14,
+  // strainWobbleSpeed / Jitter:
+  //   speed of the strained wobble. ~0.028 ≈ 4.5 Hz, classic vocal vibrato rate.
+  //   Jitter spreads singers across ~4–5.5 Hz so the row doesn't vibrate in lockstep.
+  strainWobbleSpeed:       0.028,
+  strainWobbleSpeedJitter: 0.008,
 
   // --- Audio response -----------------------------------------------
-  // ampCurve: power-law exponent applied to raw FFT average before scaling.
-  //   Higher = quieter passages stay quiet, loud passages pop more.
-  ampCurve: 2.0,
-  // ampGain:  linear multiplier applied after the curve — boost overall sensitivity.
-  ampGain:  2.2,
-  // ampFloor: shaped amplitude below this is treated as silence (mouth stays closed).
-  //   Raise to ignore soft background noise; lower to open mouths on quieter passages.
-  ampFloor: 0.30,
-  // ampCeiling: shaped amplitude at which the mouth reaches fully open (1.0 → target).
-  //   Lower = mouth hits wide-open sooner; 0.7 means "loud but not max" = full open.
-  ampCeiling: 1.0,
-  // analyserSmoothing: Web Audio AnalyserNode smoothingTimeConstant (0–1).
-  //   Higher = smoother but slower to react; 0.72 is a good mid-point.
-  analyserSmoothing: 0.8,
+  // loudnessCurve:
+  //   shapes the FFT loudness reading before it drives the mouths.
+  //   Higher = quiet passages stay quieter, loud passages pop more.
+  //   (Old naming: ampCurve.)
+  loudnessCurve: 2.0,
+  // inputBoost: overall loudness boost after curve shaping.
+  //   (Old naming: ampGain.)
+  inputBoost: 2.2,
+  // minOpenLevel / fullOpenLevel:
+  //   loudness level where mouths start opening and where they reach fully open.
+  //   (Old naming: ampFloor / ampCeiling.)
+  minOpenLevel:  0.30,
+  fullOpenLevel: 1.0,
+  // fftSmoothing: analyser smoothing amount from 0-1.
+  //   Higher = smoother but slower to react.
+  //   (Old naming: analyserSmoothing.)
+  fftSmoothing: 0.8,
 
   // --- Frequency bands (Hz) ----------------------------------------
   // Each band defines the Hz range averaged for that voice section.
   // Soprano extends high to capture overtones that choral sopranos project.
   // Bands intentionally overlap so adjacent rows move sympathetically.
-  bandSoprano: { min: 300, max: 1400 },
-  bandAlto:    { min: 220, max: 800  },
-  bandTenor:   { min: 180, max: 600  },
-  bandBass:    { min:  80, max: 500  },
+  bandSoprano: { min: 500, max: 1600 },
+  bandAlto:    { min: 250, max: 1020  },
+  bandTenor:   { min: 200, max: 900  },
+  bandBass:    { min:  50, max: 750  },
 
   // --- Per-part audio response -------------------------------------
-  // Each voice section can be tuned independently. ampFloor/Ceiling/Gain
-  // and strainThreshold vary per band because different frequency ranges
-  // have different noise floors and average energy levels in choral audio.
-  partConfig: {
-    soprano: { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
-    alto:    { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
-    tenor:   { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
-    bass:    { ampFloor: 0.30, ampCeiling: 1.0, ampGain: 2.2, strainThreshold: 0.55 },
+  // Each voice section can be tuned independently. These values control
+  // when that row starts opening, when it reaches fully open, how much
+  // loudness boost it gets, and when strained wobble begins.
+  // Sopranos vibrato earlier (they sit at the top of their range more often).
+  // Basses later (chest voice is steadier at moderate volume).
+  bandTuning: {
+    soprano: { minOpenLevel: 0.30, fullOpenLevel: 1.0, inputBoost: 2.7, strainStartLevel: 0.38 },
+    alto:    { minOpenLevel: 0.30, fullOpenLevel: 1.0, inputBoost: 2.2, strainStartLevel: 0.42 },
+    tenor:   { minOpenLevel: 0.30, fullOpenLevel: 1.0, inputBoost: 2.2, strainStartLevel: 0.44 },
+    bass:    { minOpenLevel: 0.30, fullOpenLevel: 1.0, inputBoost: 2.2, strainStartLevel: 0.50 },
   },
 
   // --- Timing (ms) --------------------------------------------------
@@ -136,11 +151,11 @@ const CONFIG = {
 // Snapshot landscape mouth values so updateLayout can restore them
 // when switching back from portrait. Captured once at load time.
 const _LANDSCAPE_MOUTH = Object.freeze({
-  rx:       CONFIG.mouthRx,
-  rxOpen:   CONFIG.mouthRxOpen,
-  ryClosed: CONFIG.mouthRyClosed,
-  ryOpen:   CONFIG.mouthRyOpen,
-  spacing:  CONFIG.mouthSpacing,
+  widthClosed:  CONFIG.mouthWidthClosed,
+  widthOpen:    CONFIG.mouthWidthOpen,
+  heightClosed: CONFIG.mouthHeightClosed,
+  heightOpen:   CONFIG.mouthHeightOpen,
+  spacing:      CONFIG.singerSpacing,
 });
 // =====================================================================
 
@@ -270,17 +285,17 @@ function updateLayout() {
 
   // Apply mouth config from CONFIG (landscape values) or portrait overrides
   if (isPortrait) {
-    CONFIG.mouthRx       = CONFIG.portraitMouthRx;
-    CONFIG.mouthRxOpen   = CONFIG.portraitMouthRxOpen;
-    CONFIG.mouthRyClosed = CONFIG.portraitMouthRyClosed;
-    CONFIG.mouthRyOpen   = CONFIG.portraitMouthRyOpen;
-    CONFIG.mouthSpacing  = CONFIG.portraitMouthSpacing;
+    CONFIG.mouthWidthClosed  = CONFIG.portraitMouthWidthClosed;
+    CONFIG.mouthWidthOpen    = CONFIG.portraitMouthWidthOpen;
+    CONFIG.mouthHeightClosed = CONFIG.portraitMouthHeightClosed;
+    CONFIG.mouthHeightOpen   = CONFIG.portraitMouthHeightOpen;
+    CONFIG.singerSpacing     = CONFIG.portraitSingerSpacing;
   } else {
-    CONFIG.mouthRx       = _LANDSCAPE_MOUTH.rx;
-    CONFIG.mouthRxOpen   = _LANDSCAPE_MOUTH.rxOpen;
-    CONFIG.mouthRyClosed = _LANDSCAPE_MOUTH.ryClosed;
-    CONFIG.mouthRyOpen   = _LANDSCAPE_MOUTH.ryOpen;
-    CONFIG.mouthSpacing  = _LANDSCAPE_MOUTH.spacing;
+    CONFIG.mouthWidthClosed  = _LANDSCAPE_MOUTH.widthClosed;
+    CONFIG.mouthWidthOpen    = _LANDSCAPE_MOUTH.widthOpen;
+    CONFIG.mouthHeightClosed = _LANDSCAPE_MOUTH.heightClosed;
+    CONFIG.mouthHeightOpen   = _LANDSCAPE_MOUTH.heightOpen;
+    CONFIG.singerSpacing     = _LANDSCAPE_MOUTH.spacing;
   }
 
   // Rebuild SVG mouths on orientation change
@@ -298,8 +313,8 @@ function updateLayout() {
     const newY = rowFractions[r] * vbH;
     for (const mouth of app.rows[r].mouths) {
       mouth.el.setAttribute('cy', newY);
-      mouth.el.setAttribute('rx', CONFIG.mouthRx);
-      mouth.el.setAttribute('ry', CONFIG.mouthRyClosed);
+      mouth.el.setAttribute('rx', CONFIG.mouthWidthClosed);
+      mouth.el.setAttribute('ry', CONFIG.mouthHeightClosed);
     }
   }
 
@@ -358,6 +373,17 @@ function updateLayout() {
 
 // -------------------- DOM/SVG setup --------------------
 
+function refreshLiveMouthMotion() {
+  for (const mouth of app.mouths) {
+    mouth.lagFrames = Math.floor(rng() * (CONFIG.maxRippleDelayFrames + 1));
+    mouth.noiseFreqA = CONFIG.idleWobbleSpeed1 + rng() * CONFIG.idleWobbleSpeed1Jitter;
+    mouth.noiseFreqB = CONFIG.idleWobbleSpeed2 + rng() * CONFIG.idleWobbleSpeed2Jitter;
+    mouth.strainFreq = CONFIG.strainWobbleSpeed + rng() * CONFIG.strainWobbleSpeedJitter;
+    mouth.openResponseMs = CONFIG.mouthOpenResponseMs + rng() * CONFIG.mouthOpenResponseJitterMs;
+    mouth.closeResponseMs = CONFIG.mouthCloseResponseMs + rng() * CONFIG.mouthCloseResponseJitterMs;
+  }
+}
+
 function buildChoir(rowConfigs) {
   for (const cfg of rowConfigs) {
     const el = document.getElementById(cfg.elementId);
@@ -368,16 +394,16 @@ function buildChoir(rowConfigs) {
 
   for (const cfg of rowConfigs) {
     const rowEl = document.getElementById(cfg.elementId);
-    const totalSpan = (cfg.count - 1) * CONFIG.mouthSpacing;
+    const totalSpan = (cfg.count - 1) * CONFIG.singerSpacing;
     const startX = 500 - totalSpan / 2;
 
     const mouthsInRow = [];
     for (let i = 0; i < cfg.count; i++) {
       const ellipse = document.createElementNS(SVG_NS, 'ellipse');
-      ellipse.setAttribute('cx', startX + i * CONFIG.mouthSpacing);
+      ellipse.setAttribute('cx', startX + i * CONFIG.singerSpacing);
       ellipse.setAttribute('cy', 0);
-      ellipse.setAttribute('rx', CONFIG.mouthRx);
-      ellipse.setAttribute('ry', CONFIG.mouthRyClosed);
+      ellipse.setAttribute('rx', CONFIG.mouthWidthClosed);
+      ellipse.setAttribute('ry', CONFIG.mouthHeightClosed);
       ellipse.classList.add('mouth');
       rowEl.appendChild(ellipse);
 
@@ -385,15 +411,15 @@ function buildChoir(rowConfigs) {
         el: ellipse,
         rowId: cfg.id,
         index: i,
-        lagFrames: Math.floor(rng() * CONFIG.lagFramesMax),
+        lagFrames: Math.floor(rng() * (CONFIG.maxRippleDelayFrames + 1)),
         noisePhaseA: rng() * Math.PI * 2,
         noisePhaseB: rng() * Math.PI * 2,
-        noiseFreqA: CONFIG.noiseFreqABase + rng() * CONFIG.noiseFreqARange,
-        noiseFreqB: CONFIG.noiseFreqBBase + rng() * CONFIG.noiseFreqBRange,
-        strainFreq: CONFIG.strainFreqBase + rng() * CONFIG.strainFreqRange,
+        noiseFreqA: CONFIG.idleWobbleSpeed1 + rng() * CONFIG.idleWobbleSpeed1Jitter,
+        noiseFreqB: CONFIG.idleWobbleSpeed2 + rng() * CONFIG.idleWobbleSpeed2Jitter,
+        strainFreq: CONFIG.strainWobbleSpeed + rng() * CONFIG.strainWobbleSpeedJitter,
         current: 0,
-        attackTau:  CONFIG.attackTauBase  + rng() * CONFIG.attackTauJitter,
-        releaseTau: CONFIG.releaseTauBase + rng() * CONFIG.releaseTauJitter,
+        openResponseMs:  CONFIG.mouthOpenResponseMs  + rng() * CONFIG.mouthOpenResponseJitterMs,
+        closeResponseMs: CONFIG.mouthCloseResponseMs + rng() * CONFIG.mouthCloseResponseJitterMs,
       };
       mouthsInRow.push(mouth);
       app.mouths.push(mouth);
@@ -405,6 +431,7 @@ function buildChoir(rowConfigs) {
       mouths: mouthsInRow,
       history: new Float32Array(30),
       historyIdx: 0,
+      latestRawLevel: 0,
       latestAmp: 0,
     });
   }
@@ -440,7 +467,7 @@ function ensureAudioGraph() {
   app.audioCtx = new AC();
   app.analyser = app.audioCtx.createAnalyser();
   app.analyser.fftSize = 2048;
-  app.analyser.smoothingTimeConstant = CONFIG.analyserSmoothing;
+  app.analyser.smoothingTimeConstant = CONFIG.fftSmoothing;
   app.freqData = new Uint8Array(app.analyser.frequencyBinCount);
 
   app.gain = app.audioCtx.createGain();
@@ -697,10 +724,11 @@ function updateBandAmplitudes() {
       count++;
     }
     const avg = count > 0 ? (sum / count) / 255 : 0;
-    const pc = CONFIG.partConfig[row.band];
-    const raw = Math.min(1, Math.pow(avg, CONFIG.ampCurve) * pc.ampGain);
-    // Remap so ampFloor = silent (0) and ampCeiling = fully open (1)
-    const shaped = Math.min(1, Math.max(0, (raw - pc.ampFloor) / (pc.ampCeiling - pc.ampFloor)));
+    const tuning = CONFIG.bandTuning[row.band];
+    const raw = Math.min(1, Math.pow(avg, CONFIG.loudnessCurve) * tuning.inputBoost);
+    // Remap so minOpenLevel = silent (0) and fullOpenLevel = fully open (1)
+    const shaped = Math.min(1, Math.max(0, (raw - tuning.minOpenLevel) / (tuning.fullOpenLevel - tuning.minOpenLevel)));
+    row.latestRawLevel = raw;
     row.latestAmp = shaped;
     row.historyIdx = (row.historyIdx + 1) % row.history.length;
     row.history[row.historyIdx] = shaped;
@@ -724,13 +752,13 @@ function updateMouths(time, dt) {
         target = 0;
       } else {
         const bandAmp = getLaggedAmp(row, mouth.lagFrames);
-        const noise = Math.sin(time * mouth.noiseFreqA + mouth.noisePhaseA) * CONFIG.noiseAmp
-                    + Math.sin(time * mouth.noiseFreqB + mouth.noisePhaseB) * CONFIG.noiseAmp2;
+        const noise = Math.sin(time * mouth.noiseFreqA + mouth.noisePhaseA) * CONFIG.idleWobbleAmount1
+                    + Math.sin(time * mouth.noiseFreqB + mouth.noisePhaseB) * CONFIG.idleWobbleAmount2;
         // Strain shimmer: fast vibration that grows when amplitude exceeds per-part threshold
-        const strainThr = CONFIG.partConfig[row.band].strainThreshold;
+        const strainThr = CONFIG.bandTuning[row.band].strainStartLevel;
         const strainFactor = Math.max(0, (bandAmp - strainThr) / (1 - strainThr));
         const strain = Math.sin(time * mouth.strainFreq + mouth.noisePhaseA * 3.7)
-                     * CONFIG.strainAmp * strainFactor;
+                     * CONFIG.strainWobbleAmount * strainFactor;
         target = Math.max(0, Math.min(1.1, bandAmp * (1 + noise + strain)));
         if (ending) {
           const fadeT = Math.min(1, (time - app.stateEnteredAt) / CONFIG.endingSettleMs);
@@ -739,13 +767,13 @@ function updateMouths(time, dt) {
       }
 
       const diff = target - mouth.current;
-      const tau = diff > 0 ? mouth.attackTau : mouth.releaseTau;
-      const rate = 1 - Math.exp(-dt / tau);
+      const responseMs = diff > 0 ? mouth.openResponseMs : mouth.closeResponseMs;
+      const rate = 1 - Math.exp(-dt / responseMs);
       mouth.current += diff * rate;
 
       const a = Math.max(0, Math.min(1, mouth.current));
-      const ry = CONFIG.mouthRyClosed + (CONFIG.mouthRyOpen - CONFIG.mouthRyClosed) * a;
-      const rx = CONFIG.mouthRx - (CONFIG.mouthRx - CONFIG.mouthRxOpen) * a;
+      const ry = CONFIG.mouthHeightClosed + (CONFIG.mouthHeightOpen - CONFIG.mouthHeightClosed) * a;
+      const rx = CONFIG.mouthWidthClosed - (CONFIG.mouthWidthClosed - CONFIG.mouthWidthOpen) * a;
       mouth.el.setAttribute('ry', ry.toFixed(2));
       mouth.el.setAttribute('rx', rx.toFixed(2));
     }
@@ -849,27 +877,101 @@ function pathEased(t) {
   return ((beatIdx + easedBeatT) / beats) % 1;
 }
 
+function setPanelsVisible(visible) {
+  const debugPanel = document.getElementById('debug-panel');
+  const vizPanel = document.getElementById('viz-panel');
+  if (debugPanel) debugPanel.style.display = visible ? 'block' : 'none';
+  if (vizPanel) vizPanel.style.display = visible ? 'block' : 'none';
+}
+
+function togglePanels() {
+  const debugPanel = document.getElementById('debug-panel');
+  const vizPanel = document.getElementById('viz-panel');
+  const isOpen = (debugPanel && debugPanel.style.display !== 'none')
+    || (vizPanel && vizPanel.style.display !== 'none');
+  setPanelsVisible(!isOpen);
+}
+
 // -------------------- Visualizer panel --------------------
 
 const VIZ_BANDS  = ['soprano', 'alto', 'tenor', 'bass'];
 const VIZ_COLORS = { soprano: '#f06090', alto: '#f0a030', tenor: '#30c080', bass: '#4090f0' };
 const VIZ_LABELS = { soprano: 'Soprano',  alto: 'Alto',    tenor: 'Tenor',   bass: 'Bass'   };
+const VIZ_FREQ_WINDOW = { min: 50, max: 2200 };
 
 // Sliders exposed per-part in the viz panel
 const VIZ_SLIDERS = [
   // label,     key,               min,  max,  step
-  ['Floor',     'ampFloor',        0,    0.5,  0.01],
-  ['Ceiling',   'ampCeiling',      0.2,  1.5,  0.01],
-  ['Gain',      'ampGain',         0.3,  6,    0.1 ],
-  ['Strain',    'strainThreshold', 0,    1,    0.01],
+  ['Open At',       'minOpenLevel',   0,    0.5,  0.01],
+  ['Fully Open',    'fullOpenLevel',  0.2,  1.5,  0.01],
+  ['Boost',         'inputBoost',     0.3,  6,    0.1 ],
+  ['Strain Starts', 'strainStartLevel', 0,  1,    0.01],
 ];
+
+const VIZ_BAND_SLIDERS = [
+  ['Min', 'min', VIZ_FREQ_WINDOW.min, VIZ_FREQ_WINDOW.max, 10],
+  ['Max', 'max', VIZ_FREQ_WINDOW.min, VIZ_FREQ_WINDOW.max, 10],
+];
+
+function formatVizValue(key, value) {
+  return key === 'min' || key === 'max'
+    ? `${Math.round(value)} Hz`
+    : value.toFixed(2);
+}
+
+function syncVizCanvasSize(canvas) {
+  const cssWidth = Math.max(180, Math.round(canvas.clientWidth || 248));
+  const cssHeight = window.innerWidth <= 820 ? 84 : 70;
+  const pixelRatio = window.devicePixelRatio || 1;
+  const targetWidth = Math.round(cssWidth * pixelRatio);
+  const targetHeight = Math.round(cssHeight * pixelRatio);
+
+  if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+  }
+
+  canvas.style.width = '100%';
+  canvas.style.height = `${cssHeight}px`;
+}
+
+function createVizSliderRow({ label, value, min, max, step, color, valueKey, onInput }) {
+  const row = document.createElement('div');
+  row.style.cssText = 'margin-bottom:3px';
+
+  const valSpan = document.createElement('span');
+  valSpan.style.cssText = `float:right;color:${color};min-width:48px;text-align:right`;
+  valSpan.textContent = formatVizValue(valueKey, value);
+
+  const labelEl = document.createElement('div');
+  labelEl.style.cssText = 'font-size:10px;margin-bottom:1px';
+  labelEl.textContent = label;
+  labelEl.appendChild(valSpan);
+
+  const slider = document.createElement('input');
+  slider.type  = 'range';
+  slider.min   = min;
+  slider.max   = max;
+  slider.step  = step;
+  slider.value = value;
+  slider.style.cssText = `width:100%;accent-color:${color};cursor:pointer`;
+  slider.addEventListener('input', () => {
+    onInput(parseFloat(slider.value), { slider, valSpan });
+  });
+
+  row.appendChild(labelEl);
+  row.appendChild(slider);
+
+  return { row, slider, valSpan };
+}
 
 function buildVisualizerPanel() {
   const sectionsDiv = document.getElementById('viz-sections');
 
   for (const band of VIZ_BANDS) {
     const color = VIZ_COLORS[band];
-    const pc    = CONFIG.partConfig[band];
+    const tuning = CONFIG.bandTuning[band];
+    const bandCfg = CONFIG[BAND_KEYS[band]];
 
     const section = document.createElement('div');
     section.style.cssText = 'margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #222';
@@ -883,37 +985,57 @@ function buildVisualizerPanel() {
     cvs.id = `viz-cvs-${band}`;
     cvs.width  = 248;
     cvs.height = 70;
-    cvs.style.cssText = 'width:248px;height:70px;display:block;margin-bottom:6px;border-radius:2px';
+    cvs.style.cssText = 'width:100%;height:70px;display:block;margin-bottom:6px;border-radius:6px';
     section.appendChild(cvs);
 
     for (const [sliderLabel, key, min, max, step] of VIZ_SLIDERS) {
-      const row = document.createElement('div');
-      row.style.cssText = 'margin-bottom:3px';
+      const { row } = createVizSliderRow({
+        label: sliderLabel,
+        value: tuning[key],
+        min,
+        max,
+        step,
+        color,
+        valueKey: key,
+        onInput: (nextValue, { valSpan }) => {
+          tuning[key] = nextValue;
+          valSpan.textContent = formatVizValue(key, nextValue);
+        },
+      });
+      section.appendChild(row);
+    }
 
-      const valSpan = document.createElement('span');
-      valSpan.style.cssText = `float:right;color:${color};min-width:30px;text-align:right`;
-      valSpan.textContent = pc[key].toFixed(2);
+    const bandSliderRefs = {};
+    for (const [sliderLabel, key, min, max, step] of VIZ_BAND_SLIDERS) {
+      const { row, slider, valSpan } = createVizSliderRow({
+        label: sliderLabel,
+        value: bandCfg[key],
+        min,
+        max,
+        step,
+        color,
+        valueKey: key,
+        onInput: (nextValue) => {
+          bandCfg[key] = nextValue;
 
-      const labelEl = document.createElement('div');
-      labelEl.style.cssText = 'font-size:10px;margin-bottom:1px';
-      labelEl.textContent = sliderLabel;
-      labelEl.appendChild(valSpan);
+          if (bandCfg.min > bandCfg.max) {
+            if (key === 'min') {
+              bandCfg.max = nextValue;
+            } else {
+              bandCfg.min = nextValue;
+            }
+          }
 
-      const slider = document.createElement('input');
-      slider.type  = 'range';
-      slider.min   = min;
-      slider.max   = max;
-      slider.step  = step;
-      slider.value = pc[key];
-      slider.style.cssText = `width:100%;accent-color:${color};cursor:pointer`;
-      slider.addEventListener('input', () => {
-        const v = parseFloat(slider.value);
-        CONFIG.partConfig[band][key] = v;
-        valSpan.textContent = v.toFixed(2);
+          for (const sliderKey of ['min', 'max']) {
+            const ref = bandSliderRefs[sliderKey];
+            if (!ref) continue;
+            ref.slider.value = bandCfg[sliderKey];
+            ref.valSpan.textContent = formatVizValue(sliderKey, bandCfg[sliderKey]);
+          }
+        },
       });
 
-      row.appendChild(labelEl);
-      row.appendChild(slider);
+      bandSliderRefs[key] = { slider, valSpan };
       section.appendChild(row);
     }
 
@@ -921,15 +1043,12 @@ function buildVisualizerPanel() {
   }
 
   const panel = document.getElementById('viz-panel');
-  document.getElementById('viz-toggle').addEventListener('click', () => {
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  });
   document.getElementById('viz-close').addEventListener('click', () => {
-    panel.style.display = 'none';
+    setPanelsVisible(false);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'v' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      togglePanels();
     }
   });
 }
@@ -939,17 +1058,18 @@ function drawVisualizerCanvases() {
   if (!panel || panel.style.display === 'none') return;
 
   // Frequency window to display across all canvases (Hz)
-  const FREQ_MIN = 50;
-  const FREQ_MAX = 2200;
+  const FREQ_MIN = VIZ_FREQ_WINDOW.min;
+  const FREQ_MAX = VIZ_FREQ_WINDOW.max;
 
   for (const band of VIZ_BANDS) {
     const cvs = document.getElementById(`viz-cvs-${band}`);
     if (!cvs) continue;
+    syncVizCanvasSize(cvs);
     const ctx   = cvs.getContext('2d');
     const W     = cvs.width;
     const H     = cvs.height;
     const color = VIZ_COLORS[band];
-    const pc    = CONFIG.partConfig[band];
+    const tuning = CONFIG.bandTuning[band];
 
     ctx.fillStyle = '#0e0e0e';
     ctx.fillRect(0, 0, W, H);
@@ -968,7 +1088,7 @@ function drawVisualizerCanvases() {
     const bandMaxBin = Math.ceil(bandCfg.max  / nyquist * binCount);
 
     const row = app.rows.find(r => r.band === band);
-    const amp = row ? row.latestAmp : 0;
+    const rawLevel = row ? row.latestRawLevel : 0;
 
     // Layout: FFT spectrum on left, amplitude meter on right
     const FFT_W   = W - 42;
@@ -990,19 +1110,51 @@ function drawVisualizerCanvases() {
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(METER_X, 0, METER_W, H);
 
+    // Use raw loudness here so the fill lines up with Open At / Fully Open guides.
+    const floorLevel = Math.max(0, Math.min(1, tuning.minOpenLevel));
+    const ceilingLevel = Math.max(0, Math.min(1, tuning.fullOpenLevel));
+    const strainRawLevel = Math.max(
+      0,
+      Math.min(1, tuning.minOpenLevel + tuning.strainStartLevel * (tuning.fullOpenLevel - tuning.minOpenLevel))
+    );
+
     // Amplitude fill — goes red when strained
-    const ampH = amp * H;
-    ctx.fillStyle = amp > pc.strainThreshold ? '#f84040' : color;
+    const ampH = rawLevel * H;
+    ctx.fillStyle = rawLevel > strainRawLevel ? '#f84040' : color;
     ctx.fillRect(METER_X, H - ampH, METER_W, ampH);
 
+    // Open At line
+    const floorY = Math.round(H - floorLevel * H);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120, 220, 255, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 2]);
+    ctx.beginPath();
+    ctx.moveTo(0, floorY);
+    ctx.lineTo(W, floorY);
+    ctx.stroke();
+    ctx.restore();
+
+    // Fully Open line
+    const ceilingY = Math.round(H - ceilingLevel * H);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 2]);
+    ctx.beginPath();
+    ctx.moveTo(0, ceilingY);
+    ctx.lineTo(W, ceilingY);
+    ctx.stroke();
+    ctx.restore();
+
     // Strain threshold dashed line
-    const strainY = Math.round(H - pc.strainThreshold * H);
+    const strainY = Math.round(H - strainRawLevel * H);
     ctx.save();
     ctx.strokeStyle = 'rgba(255,240,80,0.75)';
     ctx.lineWidth   = 1;
     ctx.setLineDash([2, 2]);
     ctx.beginPath();
-    ctx.moveTo(METER_X - 6, strainY);
+    ctx.moveTo(0, strainY);
     ctx.lineTo(W, strainY);
     ctx.stroke();
     ctx.restore();
@@ -1013,18 +1165,37 @@ function drawVisualizerCanvases() {
 
 const DEBUG_SLIDERS = [
   // label,              key,                  min,    max,    step
-  ['Mouth ry open',      'mouthRyOpen',         5,      60,     0.5  ],
-  ['Mouth rx closed',    'mouthRx',             4,      30,     0.5  ],
-  ['Mouth rx open',      'mouthRxOpen',         4,      30,     0.5  ],
-  ['Mouth spacing',      'mouthSpacing',        40,     150,    1    ],
-  ['Attack tau',         'attackTauBase',       5,      80,     1    ],
-  ['Release tau',        'releaseTauBase',      20,     300,    1    ],
-  ['Amp curve',          'ampCurve',            0.5,    5,      0.1  ],
-  ['Noise amp',          'noiseAmp',            0,      0.3,    0.01 ],
-  ['Strain amp',         'strainAmp',           0,      0.5,    0.01 ],
-  ['Strain freq base',   'strainFreqBase',      0.0001, 0.005,  0.0001],
-  ['Analyser smoothing', 'analyserSmoothing',   0,      0.99,   0.01 ],
+  ['Open mouth height',   'mouthHeightOpen',      5,      60,     0.5   ],
+  ['Closed mouth width',  'mouthWidthClosed',     4,      30,     0.5   ],
+  ['Open mouth width',    'mouthWidthOpen',       4,      30,     0.5   ],
+  ['Singer spacing',      'singerSpacing',        40,     150,    1     ],
+  ['Row ripple delay',    'maxRippleDelayFrames', 0,      8,      1     ],
+  ['Open response ms',    'mouthOpenResponseMs',  5,      80,     1     ],
+  ['Open response jitter','mouthOpenResponseJitterMs', 0,  20,     1     ],
+  ['Close response ms',   'mouthCloseResponseMs', 20,     300,    1     ],
+  ['Close response jitter','mouthCloseResponseJitterMs', 0, 80,    1     ],
+  ['Loudness curve',      'loudnessCurve',        0.5,    5,      0.1   ],
+  ['Idle wobble 1',       'idleWobbleAmount1',    0,      0.3,    0.01  ],
+  ['Idle wobble 2',       'idleWobbleAmount2',    0,      0.2,    0.01  ],
+  ['Strain wobble',       'strainWobbleAmount',   0,      0.5,    0.01  ],
+  ['Strain wobble speed', 'strainWobbleSpeed',    0.0001, 0.005,  0.0001],
+  ['Strain speed jitter', 'strainWobbleSpeedJitter', 0,   0.003,  0.0001],
+  ['FFT smoothing',       'fftSmoothing',         0,      0.99,   0.01  ],
 ];
+
+const LIVE_MOUTH_MOTION_KEYS = new Set([
+  'maxRippleDelayFrames',
+  'mouthOpenResponseMs',
+  'mouthOpenResponseJitterMs',
+  'mouthCloseResponseMs',
+  'mouthCloseResponseJitterMs',
+  'idleWobbleSpeed1',
+  'idleWobbleSpeed1Jitter',
+  'idleWobbleSpeed2',
+  'idleWobbleSpeed2Jitter',
+  'strainWobbleSpeed',
+  'strainWobbleSpeedJitter',
+]);
 
 function buildDebugPanel() {
   const container = document.getElementById('debug-sliders');
@@ -1055,8 +1226,11 @@ function buildDebugPanel() {
       CONFIG[key] = v;
       valSpan.textContent = v;
       // Propagate to live analyser if applicable
-      if (key === 'analyserSmoothing' && app.analyser) {
+      if (key === 'fftSmoothing' && app.analyser) {
         app.analyser.smoothingTimeConstant = v;
+      }
+      if (LIVE_MOUTH_MOTION_KEYS.has(key)) {
+        refreshLiveMouthMotion();
       }
     });
 
@@ -1067,14 +1241,14 @@ function buildDebugPanel() {
 
   const panel = document.getElementById('debug-panel');
   document.getElementById('debug-toggle').addEventListener('click', () => {
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    togglePanels();
   });
   document.getElementById('debug-close').addEventListener('click', () => {
-    panel.style.display = 'none';
+    setPanelsVisible(false);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'd' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      togglePanels();
     }
   });
 }

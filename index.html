@@ -53,6 +53,11 @@
         <circle cx="16" cy="16" r="1.3" fill="currentColor"/>
       </svg>
     </button>
+    <button id="debug-toggle" class="icon-btn" type="button" aria-label="Open debug controls">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M4 14 C5.4 14, 5.4 10, 6.8 10 C8.2 10, 8.2 18, 9.6 18 C11 18, 11 6, 12.4 6 C13.8 6, 13.8 18, 15.2 18 C16.6 18, 16.6 9, 18 9 C19.4 9, 19.4 14, 20 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
     <button id="upload-btn" class="icon-btn" type="button" aria-label="Upload audio file">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
         <path d="M12 16 V5 M7 10 L12 5 L17 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
@@ -64,41 +69,30 @@
 
   <audio id="audio" crossorigin="anonymous" preload="auto"></audio>
 
-  <div id="debug-panel" style="
+  <div id="debug-panel" class="control-panel control-panel-debug" style="
     display:none; position:fixed; top:0; right:0; width:260px; max-height:100vh;
     overflow-y:auto; background:rgba(0,0,0,0.82); color:#ddd; font:12px/1.4 monospace;
     padding:10px 12px 16px; z-index:9999; box-sizing:border-box;
   ">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <strong style="font-size:13px">CONFIG</strong>
+    <div class="control-panel-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <strong class="control-panel-title" style="font-size:13px">CONFIG</strong>
       <button id="debug-close" style="background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:0">×</button>
     </div>
     <div id="debug-sliders"></div>
   </div>
 
-  <div id="viz-panel" style="
+  <div id="viz-panel" class="control-panel control-panel-viz" style="
     display:none; position:fixed; top:0; left:0; width:272px; max-height:100vh;
     overflow-y:auto; background:rgba(0,0,0,0.88); color:#ddd; font:12px/1.4 monospace;
     padding:10px 12px 16px; z-index:9999; box-sizing:border-box;
   ">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="control-panel-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <strong style="font-size:13px">VOICE BANDS <span style="color:#555;font-weight:normal;font-size:10px">floor · ceiling · gain · strain</span></strong>
       <button id="viz-close" style="background:none;border:none;color:#aaa;font-size:16px;cursor:pointer;padding:0">×</button>
     </div>
+    <div class="control-panel-note" style="color:#666;font-size:10px;margin:-4px 0 8px">Includes open-at, fully-open, boost, strain, and min/max sliders.</div>
     <div id="viz-sections"></div>
   </div>
-
-  <button id="debug-toggle" style="
-    position:fixed; bottom:12px; right:12px; background:rgba(0,0,0,0.5);
-    color:#aaa; border:1px solid #444; border-radius:4px; font:11px monospace;
-    padding:4px 8px; cursor:pointer; z-index:9999;
-  ">debug</button>
-
-  <button id="viz-toggle" style="
-    position:fixed; bottom:12px; left:12px; background:rgba(0,0,0,0.5);
-    color:#aaa; border:1px solid #444; border-radius:4px; font:11px monospace;
-    padding:4px 8px; cursor:pointer; z-index:9999;
-  ">viz</button>
 
   <script type="module" src="main.js"></script>
 </body>
