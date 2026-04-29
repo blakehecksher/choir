@@ -82,17 +82,5 @@
     "composer": "Ars Mvsica",
     "url": "https://archive.org/download/mariam-matrem/9%20Stabat%20Mater.mp3",
     "bpm": 58
-  },
-  {
-    "title": "Ave Maria",
-    "composer": "Traditional (Gregorian)",
-    "url": "https://archive.org/download/GregorianChant/Ave%20Maria.mp3",
-    "bpm": 60
-  },
-  {
-    "title": "Ave Maris Stella",
-    "composer": "Traditional (Gregorian)",
-    "url": "https://archive.org/download/GregorianChant/Ave%20Maris%20Stella.mp3",
-    "bpm": 58
   }
 ]
